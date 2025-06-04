@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2の補数ビジュアル解説ツール</title>
+  <style>
+    /* ----------------------------------------
+       リセット & ベーススタイル
+    ---------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html,
+    body {
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7fa;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2rem;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    p.subtitle {
+      text-align: center;
+      color: #555;
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+    /* ----------------------------------------
+       コンテナ & レイアウト
+    ---------------------------------------- */
+    .container {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      max-width: 900px;
+      width: 100%;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .input-section,
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .input-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+    .input-area input[type="text"] {
+      width: 240px;
+      font-size: 1.2rem;
+      padding: 10px 15px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      transition: border-color 0.2s;
+    }
+    .input-area input[type="text"]:focus {
+      border-color: #3498db;
+      outline: none;
+    }
+    .input-area button {
+      background-color: #3498db;
+      color: #ffffff;
+      font-size: 1.1rem;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .input-area button:hover {
+      background-color: #2980b9;
+    }
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    /* ----------------------------------------
+       ビット表示エリア
+    ---------------------------------------- */
+    .bit-table {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .bit-cell {
+      width: 40px;
+      height: 60px;
+      border: 2px solid #bdc3c7;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      background-color: #ecf0f1;
+      position: relative;
+    }
+    .label {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #2c3e50;
+    }
+    /* ----------------------------------------
+       色分け (オレンジと緑を入れ替え)
+    ---------------------------------------- */
+    .original .bit-cell {
+      background-color: #ecf0f1;
+      border-color: #95a5a6;
+    }
+    .ones-complement .bit-cell {
+      background-color: #d5f5e3; /* 緑 */
+      border-color: #27ae60;
+    }
+    .two-complement .bit-cell {
+      background-color: #fdebd0; /* オレンジ */
+      border-color: #f39c12;
+    }
+    /* ----------------------------------------
+       ステップ解説テキスト
+    ---------------------------------------- */
+    .explanation {
+      background-color: #fdfefe;
+      border-left: 4px solid #3498db;
+      padding: 15px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #444;
+    }
+    .emphasis {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    /* ----------------------------------------
+       フッター
+    ---------------------------------------- */
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>２の補数解説ツール</h1>
+    <p class="subtitle">
+      このツールでは入力された2進数のビット長に合わせて、その補数をシンプルに確認できます。
+    </p>
+
+    <!-- 入力セクション -->
+    <section class="input-section">
+      <div class="input-area">
+        <input id="binaryInput" type="text" placeholder="例： 0101 や 1100" maxlength="16" />
+        <button id="computeBtn">補数を計算</button>
+      </div>
+      <p id="errorMsg" class="error-message"></p>
+    </section>
+
+    <!-- 結果表示セクション -->
+    <section class="result-section" id="resultSection" style="display: none;">
+      <!-- オリジナルビット -->
+      <div>
+        <p class="label">① 入力された2進数（元のビット）</p>
+        <div class="bit-table original" id="originalBits"></div>
+      </div>
+
+      <!-- 1の補数表示 -->
+      <div>
+        <p class="label">② 1の補数（0と1を反転）</p>
+        <div class="bit-table ones-complement" id="onesComplementBits"></div>
+      </div>
+
+      <!-- 2の補数表示 -->
+      <div>
+        <p class="label">③ <span class="emphasis">2の補数</span>（1の補数に1を加算）</p>
+        <div class="bit-table two-complement" id="twoComplementBits"></div>
+      </div>
+
+      <!-- シンプル解説テキスト -->
+      <div class="explanation" id="explanationText"></div>
+    </section>
+
+    <footer>© キムりん＠松本深志高校</footer>
+  </div>
+
+  <script>
+    (() => {
+      const binaryInput = document.getElementById('binaryInput');
+      const computeBtn = document.getElementById('computeBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const resultSection = document.getElementById('resultSection');
+      const originalBitsDiv = document.getElementById('originalBits');
+      const onesComplementBitsDiv = document.getElementById('onesComplementBits');
+      const twoComplementBitsDiv = document.getElementById('twoComplementBits');
+      const explanationText = document.getElementById('explanationText');
+
+      // ボタンクリック時の処理
+      computeBtn.addEventListener('click', () => {
+        const raw = binaryInput.value.trim();
+        errorMsg.textContent = '';
+        explanationText.textContent = '';
+        originalBitsDiv.innerHTML = '';
+        onesComplementBitsDiv.innerHTML = '';
+        twoComplementBitsDiv.innerHTML = '';
+
+        // 入力バリデーション：0/1のみ
+        if (!/^[01]+$/.test(raw)) {
+          errorMsg.textContent = '2進数は0と1のみで入力してください。';
+          resultSection.style.display = 'none';
+          return;
+        }
+        if (raw.length < 2) {
+          errorMsg.textContent = '2ビット以上の2進数を入力してください。';
+          resultSection.style.display = 'none';
+          return;
+        }
+
+        const bits = raw.split('').map((b) => parseInt(b, 10));
+        const n = bits.length;
+
+        // ① オリジナルビットを表示
+        bits.forEach((bit) => {
+          const cell = document.createElement('div');
+          cell.classList.add('bit-cell');
+          cell.textContent = bit;
+          originalBitsDiv.appendChild(cell);
+        });
+
+        // ② 1の補数（0と1を反転）を計算
+        const onesComplement = bits.map((bit) => (bit === 0 ? 1 : 0));
+        onesComplement.forEach((bit) => {
+          const cell = document.createElement('div');
+          cell.classList.add('bit-cell');
+          cell.textContent = bit;
+          onesComplementBitsDiv.appendChild(cell);
+        });
+
+        // 1の補数だけを元の数に足したときの例: 全ビット「1」となるが桁は増えない
+        const addedOnes = bits.map((_, idx) => (bits[idx] + onesComplement[idx]) % 2);
+        const allOnes = addedOnes.every((b) => b === 1);
+
+        // ③ 2の補数を計算：1の補数に1を足す
+        const twoComplement = [...onesComplement];
+        let carry = 1;
+        for (let i = n - 1; i >= 0; i--) {
+          const sum = twoComplement[i] + carry;
+          twoComplement[i] = sum % 2;
+          carry = sum > 1 ? 1 : 0;
+        }
+        twoComplement.forEach((bit) => {
+          const cell = document.createElement('div');
+          cell.classList.add('bit-cell');
+          cell.textContent = bit;
+          twoComplementBitsDiv.appendChild(cell);
+        });
+
+        // シンプルな解説
+        const baseValue = '1' + '0'.repeat(n);
+        let explanation = '';
+        explanation += `<strong>2の補数とは「ある自然数に対して、足すと1桁増える最も小さい数」です。</strong><br><br>`;
+        explanation += `① もとの数: <strong>${raw}</strong><br>`;
+        explanation += `② 1の補数: 0と1を反転 → <strong>${onesComplement.join('')}</strong><br>`;
+        if (allOnes) {
+          explanation += `<br>もとの数に1の補数を足すと全ビットが「1」になります (${raw} + ${onesComplement.join('')} = ${'1'.repeat(n)})。<br>しかしこのままでは1桁増えないため、まだ補数にはなりません。`;
+        }
+        explanation += `<br><br>③ <span class="emphasis">2の補数</span>: 1の補数に1を加算 → <strong>${twoComplement.join('')}</strong><br>`;
+        explanation += `<br><strong>${raw} + ${twoComplement.join('')} = ${baseValue}(2)</strong> となり、もとの数に足すと1桁増える最小の数であることがわかります。`;
+
+        explanationText.innerHTML = explanation;
+        resultSection.style.display = 'flex';
+      });
+    })();
+  </script>
+</body>
+</html>
